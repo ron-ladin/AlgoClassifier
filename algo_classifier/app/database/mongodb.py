@@ -1,4 +1,5 @@
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from pymongo.errors import ConfigurationError
 
 from app.core.config import settings
 
@@ -17,6 +18,11 @@ async def connect_to_mongo() -> None:
     try:
         await mongo_client.admin.command("ping")
         mongo_database = mongo_client.get_default_database()
+    except ConfigurationError as exc:
+        mongo_client.close()
+        mongo_client = None
+        mongo_database = None
+        raise RuntimeError("MONGODB_URI must include a database name.") from exc
     except Exception as exc:
         mongo_client.close()
         mongo_client = None

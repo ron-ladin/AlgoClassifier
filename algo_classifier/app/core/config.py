@@ -6,12 +6,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     MONGODB_URI: str = Field(min_length=1)
-    GEMINI_API_KEY: str = Field(min_length=1)
+    GEMINI_API_KEY: str
 
     @field_validator("MONGODB_URI")
     @classmethod
     def validate_mongodb_uri(cls, value: str) -> str:
         cleaned = value.strip()
+        if not cleaned:
+            raise ValueError("MONGODB_URI must not be empty.")
         parsed = urlparse(cleaned)
 
         if parsed.scheme not in {"mongodb", "mongodb+srv"}:
@@ -26,9 +28,10 @@ class Settings(BaseSettings):
     @field_validator("GEMINI_API_KEY")
     @classmethod
     def validate_gemini_api_key(cls, value: str) -> str:
-        if not value.strip():
+        cleaned = value.strip()
+        if not cleaned:
             raise ValueError("GEMINI_API_KEY must not be empty.")
-        return value
+        return cleaned
 
     model_config = SettingsConfigDict(
         env_file=".env",
