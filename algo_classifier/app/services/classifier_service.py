@@ -38,7 +38,6 @@ class ClassifierService:
            EXAMPLES of desired granularity:
            - 'Reduction to Max-Flow with Edge Capacities'
            - 'Dummy Node for Multi-Source Reachability'
-           - 'Binary Search on the Answer Space'
            - 'Weight Function Transformation (Log-Scaling)'
         3. CATCHY_TITLE: Create a professional 3-5 word title for the problem.
         4. SOLUTION_ESSENCE: Explain the 'Eureka' moment in 1-2 sentences.
@@ -89,7 +88,6 @@ class ClassifierService:
             categoryName=ai_data["categoryName"],
             specificTechnique=ai_data["specificTechnique"], # Our new specific field
             solutionEssence=ai_data["solutionEssence"],
-            confidenceScore=ai_data["confidenceScore"],
             createdAt=datetime.utcnow()
         )
         
