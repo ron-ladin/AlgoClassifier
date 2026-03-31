@@ -1,40 +1,79 @@
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from pymongo import IndexModel, DESCENDING, TEXT
 from pymongo.errors import ConfigurationError
 
 from app.core.config import settings
-# manage the physical connection to MongoDB and provide access to the database instance
+
+# Global connection variables
 mongo_client: AsyncIOMotorClient | None = None
-# represents the specific MongoDB database that the application will interact with, derived from the connection URI provided in settings. It is initialized after a successful connection to MongoDB and is used for performing database operations throughout the application.
 mongo_database: AsyncIOMotorDatabase | None = None
 
-# This module provides functions to connect to and disconnect from MongoDB, ensuring that the connection is properly managed and that any issues with the connection URI are handled gracefully. The use of async functions allows for non-blocking database operations, which is essential for the performance of the application.
+async def create_indexes() -> None:
+    """
+    Ensures that required indexes exist in the questions collection.
+    Optimizes queries for user-specific retrieval, sorting, and full-text search.
+    """
+    if mongo_database is None:
+        return
+
+    collection = mongo_database.get_collection("questions")
+
+    # Define indexes based on planned access patterns
+    indexes = [
+        # Optimized for: "Show my latest questions" (O(log n) retrieval + sorted)
+        IndexModel([("userId", 1), ("createdAt", DESCENDING)], name="user_recent_questions"),
+        
+        # Optimized for: "Filter my questions by category"
+        IndexModel([("userId", 1), ("categoryName", 1)], name="user_category_filter"),
+        
+        # Optimized for: "Public social feed" (Future-proofing)
+        IndexModel([("isPublic", 1)], name="public_questions_filter"),
+        
+        # Optimized for: Full-text search with title weights
+        IndexModel(
+            [("catchyTitle", TEXT), ("originalText", TEXT)],
+            weights={"catchyTitle": 10, "originalText": 1},
+            name="question_text_search"
+        )
+    ]
+
+    try:
+        await collection.create_indexes(indexes)
+    except Exception as exc:
+        # In professional systems, failing to create indexes is a critical startup error
+        raise RuntimeError("Failed to create database indexes.") from exc
+
 async def connect_to_mongo() -> None:
+    """
+    Initializes the MongoDB connection and ensures infrastructure (indexes) is ready.
+    """
     global mongo_client 
     global mongo_database
-    #check if the connection is already established to avoid redundant connections
+
     if mongo_client is not None: 
         return
     
-    #initialize the MongoDB client using the connection URI from settings.
-    #This client will manage the connection to the MongoDB server and allow for database operations.
     mongo_client = AsyncIOMotorClient(settings.MONGODB_URI) 
    
     try:
+        # Verify connection
         await mongo_client.admin.command("ping")
         mongo_database = mongo_client.get_default_database()
+        
+        # Initialize indexes immediately after connection
+        await create_indexes()
+        
     except ConfigurationError as exc:
-        mongo_client.close()
-        mongo_client = None
-        mongo_database = None
+        await close_mongo_connection()
         raise RuntimeError("MONGODB_URI must include a database name.") from exc
     except Exception as exc:
-        mongo_client.close()
-        mongo_client = None
-        mongo_database = None
+        await close_mongo_connection()
         raise RuntimeError("Failed to initialize MongoDB connection.") from exc
 
-
 async def close_mongo_connection() -> None:
+    """
+    Safely closes the MongoDB client connection.
+    """
     global mongo_client
     global mongo_database
 

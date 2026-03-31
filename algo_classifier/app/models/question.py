@@ -3,26 +3,20 @@ from pydantic import BaseModel, ConfigDict
 
 class QuestionDocument(BaseModel):
     """
-    Pydantic model for an algorithmic question.
-    Focuses on educational value and long-term memory aids.
+    Pydantic model for storage in MongoDB.
+    Represents the 'Source of Truth' for a question.
     """
-    # Strict validation: no extra fields allowed, no automatic type casting
     model_config = ConfigDict(strict=True, extra="forbid")
 
-    # The raw problem description provided by the user
+    # Ownership and Privacy management
+    userId: str                   # Extracted from JWT token
+    isPublic: bool = False        # Always private by default upon creation
+
+    # Question Content (AI Generated)
     originalText: str
-    
-    # A short, memorable name for the problem (e.g., "The Greedy Camel")
     catchyTitle: str
-    
-    # Formal algorithmic category (e.g., "Dynamic Programming")
     categoryName: str
-    
-    # A concise summary of the core logic/algorithm needed for the solution
+    technicalKey: str
     solutionEssence: str
-    
-    # AI's confidence score for the classification (0.0 to 1.0)
     confidenceScore: float
-    
-    # Auto-generated UTC timestamp of record creation
     createdAt: datetime

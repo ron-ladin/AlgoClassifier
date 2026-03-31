@@ -1,19 +1,24 @@
 from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-# defines the data that the user send for us to classify 
-# and the data we send back to the user after classification. 
+
 class ClassifyRequest(BaseModel):
-    """Schema for incoming classification requests."""
+    """
+    Schema for incoming classification requests.
+    Identity (userId) and sharing status are handled separately for security and clean UX.
+    """
     text: str = Field(..., min_length=10, description="The raw algorithmic problem text")
 
     model_config = ConfigDict(strict=True)
 
-# defines the structure of the data stored in MongoDB and sent back to the user after classification. 
 class QuestionResponse(BaseModel):
-    """Schema for the response sent back to the user."""
+    """
+    Schema for the response sent back to the user.
+    Represents a categorized question in the user's personal dashboard.
+    """
     catchyTitle: str
     categoryName: str
     solutionEssence: str
+    isPublic: bool  # Will return False by default for new classifications
     createdAt: datetime
 
     model_config = ConfigDict(from_attributes=True)
