@@ -16,7 +16,7 @@ class QuestionDocument(BaseModel):
     originalText: str
     catchyTitle: str
     categoryName: str
-    technicalKey: str
+    specificTechnique: str
     solutionEssence: str
     confidenceScore: float
     createdAt: datetime

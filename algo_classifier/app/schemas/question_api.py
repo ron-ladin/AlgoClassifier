@@ -17,6 +17,7 @@ class QuestionResponse(BaseModel):
     """
     catchyTitle: str
     categoryName: str
+    specificTechnique: str
     solutionEssence: str
     isPublic: bool  # Will return False by default for new classifications
     createdAt: datetime
