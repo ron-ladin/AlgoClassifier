@@ -16,15 +16,12 @@ async def connect_to_mongo() -> None:
     mongo_client = AsyncIOMotorClient(settings.MONGODB_URI)
     try:
         await mongo_client.admin.command("ping")
-        try:
-            mongo_database = mongo_client.get_default_database()
-        except Exception:
-            mongo_database = None
-    except Exception:
+        mongo_database = mongo_client.get_default_database()
+    except Exception as exc:
         mongo_client.close()
         mongo_client = None
         mongo_database = None
-        raise
+        raise RuntimeError("Failed to initialize MongoDB connection.") from exc
 
 
 async def close_mongo_connection() -> None:
