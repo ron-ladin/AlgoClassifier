@@ -1,11 +1,12 @@
 
+import email
 import logging
 from typing import Optional
 from bson import ObjectId
 from fastapi import HTTPException, status
 from app.models.user import UserCreate, UserInDB
 from app.core.security import get_password_hash
-import app.database.mongodb as db
+from app.database import mongodb
 
 # Logger for diagnostic tracking
 logger = logging.getLogger(__name__)
@@ -17,21 +18,28 @@ class UserService:
     """
 
     def _get_collection(self, name: str):
-        if db.mongo_database is None:
+        if mongodb.mongo_database is None:
             raise RuntimeError("Database not initialized")
-        return db.mongo_database.get_collection(name)
+        return mongodb.mongo_database.get_collection(name)
 
     # --- Specific Retrieval Functions (Option A) ---
 
     async def get_user_by_email(self, email: str) -> Optional[UserInDB]:
-        """O(\log n) lookup via unique email index."""
-        user_data = await self._get_collection("users").find_one({"email": email})
-        return UserInDB(**user_data) if user_data else None
+        db = mongodb.mongo_database 
+        user_data = await db.users.find_one({"email": email})
+        if user_data:
+            user_data["_id"] = str(user_data["_id"])
+            return UserInDB(**user_data)
+        return None
 
     async def get_user_by_username(self, username: str) -> Optional[UserInDB]:
         """O(\log n) lookup via unique username index."""
+        db = mongodb.mongo_database 
         user_data = await self._get_collection("users").find_one({"username": username})
-        return UserInDB(**user_data) if user_data else None
+        if user_data:
+            user_data["_id"] = str(user_data["_id"])
+            return UserInDB(**user_data)
+        return None
 
     async def get_user_by_id(self, user_id: str) -> Optional[UserInDB]:
         """Retrieval by internal MongoDB ObjectID."""
@@ -39,7 +47,10 @@ class UserService:
             # We must convert the string ID to a real BSON ObjectId
             oid = ObjectId(user_id) if isinstance(user_id, str) else user_id
             user_data = await self._get_collection("users").find_one({"_id": oid})
-            return UserInDB(**user_data) if user_data else None
+            if user_data:
+                user_data["_id"] = str(user_data["_id"])
+                return UserInDB(**user_data)
+            return None
         except Exception:
             return None
 

@@ -1,9 +1,13 @@
 fastapi
+python-multipart
 uvicorn
 motor
 pydantic
 pydantic-settings
 python-dotenv
-python-jose[cryptography]
+PyJWT
 passlib[bcrypt]
 tenacity
+google-generativeai
+email-validator
+bcrypt==3.2.2

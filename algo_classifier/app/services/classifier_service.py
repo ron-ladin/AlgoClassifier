@@ -1,15 +1,15 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import google.generativeai as genai
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.core.config import settings
 from app.models.question import QuestionDocument
-from app.database.mongodb import mongo_database
+from app.services.user_service import user_service
 
 # Configure Gemini API with the key from our environment
 genai.configure(api_key=settings.GEMINI_API_KEY)
-#the choosen LLM model
+# The chosen LLM model
 model = genai.GenerativeModel('gemini-pro')
 
 class ClassifierService:
@@ -17,16 +17,16 @@ class ClassifierService:
     Expert-level service for algorithmic problem classification.
     Uses LLM to extract deep technical insights and persists results to MongoDB.
     """
-    # try 3 time to call geminy , if faild wait 2^i seconds before retrying (i is the number of attempts)
+    # Try 3 times to call Gemini, if failed wait 2^i seconds before retrying
     @retry(
         stop=stop_after_attempt(3), 
         wait=wait_exponential(multiplier=1, min=2, max=10)
     )
     async def _call_gemini(self, text: str) -> dict:
-        
-        #Calls Gemini API with a high-precision prompt for algorithmic analysis.
-        #Implements exponential backoff for high resilience.
-        
+        """
+        Calls Gemini API with a high-precision prompt for algorithmic analysis.
+        Implements exponential backoff for high resilience.
+        """
         # This instruction sets the 'Standard of Excellence' for the AI
         system_instruction = """
         You are a Senior Algorithms Professor and Competitive Programming Coach. 
@@ -61,7 +61,7 @@ class ClassifierService:
         # Execute the AI generation
         response = model.generate_content(full_prompt)
         
-        # Cleaning: Ensure no Markdown code blocks (```json) interfere with parsing
+        # Cleaning: Ensure no Markdown code blocks interfere with parsing
         clean_json_str = response.text.replace("```json", "").replace("```", "").strip()
         
         try:
@@ -72,8 +72,8 @@ class ClassifierService:
 
     async def classify_and_save(self, text: str, user_id: str) -> QuestionDocument:
         """
-        The main workflow: Classify via AI -> Map to Document Model -> Save to DB.
-        Ensures strict data types and ownership (userId).
+        The main workflow: Classify via AI -> Map to Document Model -> Save to DB (ACID).
+        Ensures strict data types, ownership (userId), and bi-directional linking.
         """
         # 1. Get the granular technical analysis from Gemini
         ai_data = await self._call_gemini(text)
@@ -86,16 +86,20 @@ class ClassifierService:
             originalText=text,
             catchyTitle=ai_data["catchyTitle"],
             categoryName=ai_data["categoryName"],
-            specificTechnique=ai_data["specificTechnique"], # Our new specific field
+            specificTechnique=ai_data["specificTechnique"],
             solutionEssence=ai_data["solutionEssence"],
-            createdAt=datetime.utcnow()
+            confidenceScore=ai_data.get("confidenceScore", 1.0), # Added default confidence score
+            createdAt=datetime.now(timezone.utc) # Using timezone aware datetime
         )
         
-        # 3. Save to MongoDB (Optimized with the indexes we built)
-        if mongo_database is not None:
-            collection = mongo_database.get_collection("questions")
-            # insert_one expects a dictionary, model_dump() provides it
-            await collection.insert_one(question_doc.model_dump())
+        # 3. Save to MongoDB via ACID Transaction
+        # We delegate the save operation to the user_service to ensure the
+        # question is both created AND linked to the user's history atomically.
+        question_doc_dict = question_doc.model_dump(by_alias=True, exclude_none=True)
+        await user_service.save_question_with_transaction(
+            question_doc_dict=question_doc_dict,
+            user_id=user_id
+        )
             
         return question_doc
 
