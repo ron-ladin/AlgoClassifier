@@ -52,7 +52,7 @@ const AuthPage = ({ mode }: AuthPageProps) => {
         await registerService({ username: username.trim(), email: email.trim(), password });
       }
 
-      await login({ username: isRegister ? email.trim() : username.trim(), password });
+      await login({ username: username.trim(), password });
       navigate('/', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed.');
