@@ -55,7 +55,7 @@ class UserService:
             async with session.start_transaction():
                 try:
                     delete_res = await self._get_collection("questions").delete_one(
-                        {"_id": q_oid, "userId": user_id},
+                        {"_id": q_oid, "userId": u_oid},
                         session=session,
                     )
                     if delete_res.deleted_count == 0:
