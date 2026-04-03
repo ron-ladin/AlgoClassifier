@@ -84,7 +84,7 @@ export const classifyQuestion = async (text: string): Promise<QuestionDetailResp
 
 export const getHistory = async (): Promise<QuestionSummary[]> => {
   try {
-    const response = await axiosClient.get<unknown>('/questions/history');
+    const response = await axiosClient.get<unknown>('/questions/');
     if (!Array.isArray(response.data)) {
       throw new Error('Invalid history payload from server.');
     }
