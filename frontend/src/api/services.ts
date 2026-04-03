@@ -84,7 +84,7 @@ export const classifyQuestion = async (text: string): Promise<QuestionDetailResp
 
 export const getHistory = async (): Promise<QuestionSummary[]> => {
   try {
-    const response = await axiosClient.get<unknown>('/questions/history');
+    const response = await axiosClient.get<unknown>('/questions/');
     if (!Array.isArray(response.data)) {
       throw new Error('Invalid history payload from server.');
     }
@@ -105,6 +105,18 @@ export const getQuestionDetails = async (id: string): Promise<QuestionDetailResp
 
     const response = await axiosClient.get<QuestionDetailResponse>(`/questions/${encodeURIComponent(id)}`);
     return response.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+};
+
+export const deleteQuestion = async (id: string): Promise<void> => {
+  try {
+    if (!id.trim()) {
+      throw new Error('Question id is required.');
+    }
+
+    await axiosClient.delete(`/questions/${encodeURIComponent(id)}`);
   } catch (error) {
     throw new Error(extractErrorMessage(error));
   }
