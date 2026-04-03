@@ -1,22 +1,8 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
-import type { LoginCredentials } from '../types/api';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { login as loginService } from '../api/services';
-
-interface AuthUser {
-  userId: string;
-}
-
-interface AuthContextValue {
-  user: AuthUser | null;
-  isAuthenticated: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
-  logout: () => void;
-}
-
-const ACCESS_TOKEN_KEY = 'access_token';
-const USER_ID_KEY = 'user_id';
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+import { AuthContext } from './auth.context';
+import { ACCESS_TOKEN_KEY, USER_ID_KEY, type AuthContextValue, type AuthUser } from './auth.types';
+import type { LoginCredentials } from '../types/api';
 
 const getStoredUser = (): AuthUser | null => {
   const token = localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -60,12 +46,4 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = (): AuthContextValue => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider.');
-  }
-  return context;
 };

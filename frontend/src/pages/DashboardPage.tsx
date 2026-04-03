@@ -4,7 +4,7 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import SidebarHistory from '../components/SidebarHistory';
 import ResultCard from '../components/ResultCard';
 import { classifyQuestion } from '../api/services';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import type { QuestionDetailResponse } from '../types/api';
 
 const DashboardPage = () => {

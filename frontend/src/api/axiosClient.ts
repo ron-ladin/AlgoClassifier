@@ -1,4 +1,5 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios from 'axios';
+import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const API_BASE_URL = 'http://localhost:8000';
 const ACCESS_TOKEN_KEY = 'access_token';

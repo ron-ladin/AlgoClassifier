@@ -1,9 +1,10 @@
+import type { ReactElement } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import AuthPage from '../pages/AuthPage';
 import DashboardPage from '../pages/DashboardPage';
 
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+const ProtectedRoute = ({ children }: { children: ReactElement }) => {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
 
@@ -14,7 +15,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   return children;
 };
 
-const PublicOnlyRoute = ({ children }: { children: JSX.Element }) => {
+const PublicOnlyRoute = ({ children }: { children: ReactElement }) => {
   const { isAuthenticated } = useAuth();
 
   if (isAuthenticated) {
