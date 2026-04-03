@@ -109,9 +109,14 @@ export const classifyQuestion = async (
 
 export const getHistory = async (): Promise<QuestionSummary[]> => {
   try {
-    const response =
-      await axiosClient.get<QuestionSummary[]>("/questions/history");
-    return response.data;
+    const response = await axiosClient.get<unknown>("/questions/history");
+    if (!Array.isArray(response.data)) {
+      throw new Error("Invalid history payload from server.");
+    }
+
+    return response.data.map((item, index) =>
+      normalizeQuestionSummary(item as Record<string, unknown>, index),
+    );
   } catch (error) {
     throw new Error(extractErrorMessage(error));
   }
@@ -129,6 +134,18 @@ export const getQuestionDetails = async (
       `/questions/${encodeURIComponent(id)}`,
     );
     return response.data;
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+};
+
+export const deleteQuestion = async (id: string): Promise<void> => {
+  try {
+    if (!id.trim()) {
+      throw new Error("Question id is required.");
+    }
+
+    await axiosClient.delete(`/questions/${encodeURIComponent(id)}`);
   } catch (error) {
     throw new Error(extractErrorMessage(error));
   }
