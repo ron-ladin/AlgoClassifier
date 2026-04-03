@@ -63,7 +63,7 @@ class UserService:
 
                     update_res = await self._get_collection("users").update_one(
                         {"_id": u_oid},
-                        {"$pull": {"question_ids": question_id}},
+                        {"$pull": {"question_ids": str(q_oid)}},
                         session=session,
                     )
                     if update_res.matched_count == 0:
