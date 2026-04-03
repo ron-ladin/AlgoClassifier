@@ -27,12 +27,49 @@ class UserService:
         return questions
 
     async def get_question_by_id(self, question_id: str):
+        if not ObjectId.is_valid(question_id):
+            return None
         collection = self._get_collection("questions")
         question = await collection.find_one({"_id": ObjectId(question_id)})
         if question:
             # Explicit Data Mapping
             question["id"] = str(question.pop("_id"))
         return question
+
+    async def delete_question_with_transaction(self, question_id: str, user_id: str) -> None:
+        """
+        Deletes a question and removes its reference from the owning user atomically.
+        """
+        if mongodb.mongo_client is None:
+            raise RuntimeError("Database client not initialized")
+
+        if not ObjectId.is_valid(question_id):
+            raise HTTPException(status_code=404, detail="Question not found")
+
+        q_oid = ObjectId(question_id)
+        u_oid = ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id
+
+        async with await mongodb.mongo_client.start_session() as session:
+            async with session.start_transaction():
+                try:
+                    delete_res = await self._get_collection("questions").delete_one(
+                        {"_id": q_oid, "userId": user_id},
+                        session=session,
+                    )
+                    if delete_res.deleted_count == 0:
+                        raise HTTPException(status_code=404, detail="Question not found")
+
+                    update_res = await self._get_collection("users").update_one(
+                        {"_id": u_oid},
+                        {"$pull": {"question_ids": question_id}},
+                        session=session,
+                    )
+                    if update_res.matched_count == 0:
+                        raise HTTPException(status_code=404, detail="User not found")
+                except Exception as e:
+                    await session.abort_transaction()
+                    logger.error(f"Delete transaction failed: {str(e)}")
+                    raise e
 
     def _get_collection(self, name: str):
         if mongodb.mongo_database is None:

@@ -25,6 +25,11 @@ async def get_question(question_id: str, current_user: dict = Depends(get_curren
         raise HTTPException(status_code=404, detail="Question not found")
     return question
 
+@router.delete("/{question_id}", status_code=204)
+async def delete_question(question_id: str, current_user: dict = Depends(get_current_user)):
+    await user_service.delete_question_with_transaction(question_id, current_user["user_id"])
+    return None
+
 @router.post("/classify", response_model=QuestionResponse)
 async def classify_problem(request: ClassifyRequest, current_user: Dict = Depends(get_current_user)):
     try:

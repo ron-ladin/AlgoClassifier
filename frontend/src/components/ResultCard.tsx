@@ -16,12 +16,18 @@ const ResultCard = ({ result }: ResultCardProps) => {
   const steps = splitChronologicalSteps(result.chronologicalLogic);
 
   return (
-    <article className="rounded-xl border border-gray-800 bg-gray-950/70 p-6 shadow-xl shadow-black/20">
-      <div className="mb-6 flex flex-wrap items-center gap-2">
+    <article
+      dir="rtl"
+      className="rounded-xl border border-gray-800 bg-gray-950/70 p-6 text-right shadow-xl shadow-black/20"
+    >
+      <div className="mb-6 flex flex-wrap items-center justify-end gap-2">
         <span className="rounded-full border border-indigo-600 bg-indigo-600/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-200">
           {result.categoryName}
         </span>
-        <span className="rounded-full border border-emerald-700 bg-emerald-700/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-200">
+        <span
+          dir="ltr"
+          className="rounded-full border border-emerald-700 bg-emerald-700/20 px-3 py-1 text-xs font-semibold tracking-wide text-emerald-200"
+        >
           {result.specificTechnique}
         </span>
       </div>
@@ -31,7 +37,7 @@ const ResultCard = ({ result }: ResultCardProps) => {
       <section className="mt-6">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-400">Chronological Logic</h3>
         {steps.length > 0 ? (
-          <ol className="mt-3 list-decimal space-y-2 pl-5 text-gray-200">
+          <ol className="mt-3 list-decimal space-y-2 pr-5 text-gray-200">
             {steps.map((step, index) => (
               <li key={`${step}-${index}`}>{step}</li>
             ))}
@@ -50,7 +56,10 @@ const ResultCard = ({ result }: ResultCardProps) => {
       </section>
 
       <div className="mt-6">
-        <span className="rounded-md border border-cyan-500/40 bg-cyan-500/10 px-3 py-1 text-sm font-semibold text-cyan-300">
+        <span
+          dir="ltr"
+          className="inline-block rounded-md border border-cyan-500/40 bg-cyan-500/10 px-3 py-1 text-sm font-semibold text-cyan-300"
+        >
           Runtime Complexity: {result.runtimeComplexity}
         </span>
       </div>

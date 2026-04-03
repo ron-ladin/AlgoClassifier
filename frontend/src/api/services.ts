@@ -109,3 +109,15 @@ export const getQuestionDetails = async (id: string): Promise<QuestionDetailResp
     throw new Error(extractErrorMessage(error));
   }
 };
+
+export const deleteQuestion = async (id: string): Promise<void> => {
+  try {
+    if (!id.trim()) {
+      throw new Error('Question id is required.');
+    }
+
+    await axiosClient.delete(`/questions/${encodeURIComponent(id)}`);
+  } catch (error) {
+    throw new Error(extractErrorMessage(error));
+  }
+};
