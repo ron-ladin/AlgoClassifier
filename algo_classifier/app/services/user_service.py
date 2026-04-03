@@ -69,6 +69,7 @@ class UserService:
                     if update_res.matched_count == 0:
                         raise HTTPException(status_code=404, detail="User not found")
                 except Exception as e:
+                    await session.abort_transaction()
                     logger.error(f"Delete transaction failed: {str(e)}")
                     raise e
 
@@ -172,6 +173,7 @@ class UserService:
                         
                     return q_id
                 except Exception as e:
+                    await session.abort_transaction()
                     logger.error(f"Transaction failed: {str(e)}")
                     raise e
 
