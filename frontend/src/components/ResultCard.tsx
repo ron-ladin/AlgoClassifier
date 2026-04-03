@@ -26,7 +26,7 @@ const ResultCard = ({ result }: ResultCardProps) => {
         </span>
         <span
           dir="ltr"
-          className="rounded-full border border-emerald-700 bg-emerald-700/20 px-3 py-1 text-xs font-semibold tracking-wide text-emerald-200"
+          className="rounded-full border border-emerald-700 bg-emerald-700/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-200"
         >
           {result.specificTechnique}
         </span>
