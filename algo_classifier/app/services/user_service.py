@@ -45,9 +45,11 @@ class UserService:
 
         if not ObjectId.is_valid(question_id):
             raise HTTPException(status_code=404, detail="Question not found")
+        if not ObjectId.is_valid(user_id):
+            raise HTTPException(status_code=404, detail="User not found")
 
         q_oid = ObjectId(question_id)
-        u_oid = ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id
+        u_oid = ObjectId(user_id)
 
         async with await mongodb.mongo_client.start_session() as session:
             async with session.start_transaction():
@@ -145,7 +147,9 @@ class UserService:
         """
         if mongodb.mongo_client is None:
             raise RuntimeError("Database client not initialized")
-            
+        if not ObjectId.is_valid(user_id):
+            raise HTTPException(status_code=404, detail="User mapping failed")
+             
         async with await mongodb.mongo_client.start_session() as session:
             async with session.start_transaction():
                 try:
@@ -156,7 +160,7 @@ class UserService:
                     q_id = str(q_res.inserted_id)
 
                     # 2. Update user with new question ID
-                    u_oid = ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id
+                    u_oid = ObjectId(user_id)
                     update_res = await self._get_collection("users").update_one(
                         {"_id": u_oid},
                         {"$push": {"question_ids": q_id}},
