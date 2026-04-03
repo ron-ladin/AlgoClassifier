@@ -1,34 +1,42 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import Dict
-from app.schemas.question_api import ClassifyRequest, QuestionResponse
+from typing import List, Dict
+import traceback
+
+from app.schemas.question_api import (
+    ClassifyRequest, 
+    QuestionResponse, 
+    QuestionSummary, 
+    QuestionDetailResponse
+)
 from app.services.classifier_service import classifier_service
+from app.services.user_service import user_service
 from app.security.auth import get_current_user
 
-# Questions router definition
 router = APIRouter(prefix="/questions", tags=["Questions"])
 
-@router.post("/classify", response_model=QuestionResponse)
-async def classify_problem(
-    request: ClassifyRequest, 
-    current_user: Dict = Depends(get_current_user)
-):
-    """
-    Classifies a given problem text and saves the result.
+@router.get("/", response_model=List[QuestionSummary])
+async def list_questions(current_user: dict = Depends(get_current_user)):
+    return await user_service.get_user_questions(current_user["user_id"])
 
-    - **text**: The problem description to be classified.
-    - **Authorization**: Bearer token for user authentication.
-    """
+@router.get("/{question_id}", response_model=QuestionDetailResponse)
+async def get_question(question_id: str, current_user: dict = Depends(get_current_user)):
+    question = await user_service.get_question_by_id(question_id)
+    if not question or question["userId"] != current_user["user_id"]:
+        raise HTTPException(status_code=404, detail="Question not found")
+    return question
+
+@router.post("/classify", response_model=QuestionResponse)
+async def classify_problem(request: ClassifyRequest, current_user: Dict = Depends(get_current_user)):
     try:
-        # Send to service for analysis and DB storage
-        result = await classifier_service.classify_and_save(
+        return await classifier_service.classify_and_save(
             text=request.text, 
             user_id=current_user["user_id"]
         ) 
-        
-        return result
-
     except Exception as e:
-        # Return a generic error message to avoid exposing internal details
-        import traceback
+        # Crucial for local debugging
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail="An unexpected error occurred during classification.")
+        
+        if "429" in str(e):
+            raise HTTPException(status_code=429, detail="AI quota exceeded for today.")
+            
+        raise HTTPException(status_code=500, detail="Internal server error during classification.")

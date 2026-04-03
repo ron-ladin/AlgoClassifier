@@ -1,13 +1,13 @@
 
-import email
 import logging
 from typing import Optional
 from bson import ObjectId
 from fastapi import HTTPException, status
-from requests import session
+from app.models.question import QuestionDocument
 from app.models.user import UserCreate, UserInDB
 from app.core.security import get_password_hash
 from app.database import mongodb
+from bson import ObjectId
 
 # Logger for diagnostic tracking
 logger = logging.getLogger(__name__)
@@ -17,6 +17,22 @@ class UserService:
     Service layer for User entities. 
     Implements specific retrieval, Pre-check validation, and ACID transactions.
     """
+    async def get_user_questions(self, user_id: str):
+        collection = self._get_collection("questions")
+        cursor = collection.find({"userId": user_id})
+        questions = await cursor.to_list(length=100)
+        for q in questions:
+            # Explicit Data Mapping: Extract '_id', cast to string, and assign to RESTful 'id'
+            q["id"] = str(q.pop("_id"))
+        return questions
+
+    async def get_question_by_id(self, question_id: str):
+        collection = self._get_collection("questions")
+        question = await collection.find_one({"_id": ObjectId(question_id)})
+        if question:
+            # Explicit Data Mapping
+            question["id"] = str(question.pop("_id"))
+        return question
 
     def _get_collection(self, name: str):
         if mongodb.mongo_database is None:
