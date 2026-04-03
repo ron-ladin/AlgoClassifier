@@ -2,12 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 
 class ClassifyRequest(BaseModel):
-    """
-    Schema for incoming classification requests.
-    Identity (userId) and sharing status are handled separately for security and clean UX.
-    """
     text: str = Field(..., min_length=10, description="The raw algorithmic problem text")
-
     model_config = ConfigDict(strict=True)
 
 class QuestionResponse(BaseModel):
@@ -18,8 +13,11 @@ class QuestionResponse(BaseModel):
     catchyTitle: str
     categoryName: str
     specificTechnique: str
-    solutionEssence: str
-    isPublic: bool  # Will return False by default for new classifications
+    chronologicalLogic: str
+    thePunchline: str
+    runtimeComplexity: str
+    
+    isPublic: bool
     createdAt: datetime
 
     model_config = ConfigDict(from_attributes=True)

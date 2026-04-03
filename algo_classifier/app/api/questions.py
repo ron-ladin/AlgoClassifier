@@ -29,4 +29,6 @@ async def classify_problem(
 
     except Exception as e:
         # Return a generic error message to avoid exposing internal details
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail="An unexpected error occurred during classification.")

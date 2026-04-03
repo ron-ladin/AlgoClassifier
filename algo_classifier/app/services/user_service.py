@@ -4,6 +4,7 @@ import logging
 from typing import Optional
 from bson import ObjectId
 from fastapi import HTTPException, status
+from requests import session
 from app.models.user import UserCreate, UserInDB
 from app.core.security import get_password_hash
 from app.database import mongodb
@@ -90,10 +91,10 @@ class UserService:
         """
         Ensures atomicity between Question creation and User history update.
         """
-        if db.mongo_client is None:
+        if mongodb.mongo_client is None:
             raise RuntimeError("Database client not initialized")
             
-        async with await db.mongo_client.start_session() as session:
+        async with await mongodb.mongo_client.start_session() as session:
             async with session.start_transaction():
                 try:
                     # 1. Insert question
@@ -102,7 +103,7 @@ class UserService:
                     )
                     q_id = str(q_res.inserted_id)
 
-                    # 2. Link to user via atomic $push
+                    # 2. Update user with new question ID
                     u_oid = ObjectId(user_id) if ObjectId.is_valid(user_id) else user_id
                     update_res = await self._get_collection("users").update_one(
                         {"_id": u_oid},

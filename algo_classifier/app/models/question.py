@@ -17,6 +17,9 @@ class QuestionDocument(BaseModel):
     catchyTitle: str
     categoryName: str
     specificTechnique: str
-    solutionEssence: str
+    chronologicalLogic: str
+    thePunchline: str
+    runtimeComplexity: str
+    
     confidenceScore: float
     createdAt: datetime

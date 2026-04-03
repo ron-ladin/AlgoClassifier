@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     # Database and AI Keys
     MONGODB_URI: str = Field(min_length=1)
     GEMINI_API_KEY: str
+    GEMINI_MODEL_NAME: str = "gemini-3-flash-preview"
 
     # JWT Security Settings
     # This is the master key used to sign our security tokens

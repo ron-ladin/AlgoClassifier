@@ -1,3 +1,5 @@
+from unittest import result
+
 import requests
 import uuid
 
@@ -54,7 +56,7 @@ def run_e2e_tests():
     
     # Arrange
     question_payload = {
-        "text": "Given a connected, undirected graph with weighted edges, find a subset of the edges that forms a tree that includes every vertex, where the total weight of all the edges in the tree is minimized. Note that processing the edges requires sorting them first."
+        "text": "Given a directed graph where edge weights are real numbers (which may include negative values) but the graph is guaranteed to contain no negative cycles, find the shortest path between two specific nodes. Explain why a greedy approach like Dijkstra's algorithm is insufficient here, and describe the step-by-step process of the optimal algorithm. What is the fundamental property of shortest paths that dictates the number of iterations required for convergence?"
     }
     
     # Crucial: Passing the JWT in the Authorization header as a Bearer token
@@ -75,9 +77,14 @@ def run_e2e_tests():
     result_data = res_classify.json()
     print("✓ Classification successful. AI Response received:")
     print("--------------------------------------------------")
-    print(f"Title: {result_data.get('title')}")
-    print(f"Category: {result_data.get('category')}")
-    print(f"Complexity: Time {result_data.get('time_complexity')} | Space {result_data.get('space_complexity')}")
+    print(f"TITLE:      {result_data.get('catchyTitle')}")
+    print(f"CATEGORY:   {result_data.get('categoryName')}")
+    print(f"TECHNIQUE:  {result_data.get('specificTechnique')}")
+    print(f"COMPLEXITY: {result_data.get('runtimeComplexity')}")
+    print("\nCHRONOLOGICAL LOGIC:")
+    print(f"{result_data.get('chronologicalLogic')}")
+    print("\n💡 THE PUNCHLINE (The 'Catch'):")
+    print(f"{result_data.get('thePunchline')}")
     print("--------------------------------------------------")
     print("\n✅ All End-to-End tests passed successfully!")
 

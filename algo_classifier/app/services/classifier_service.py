@@ -29,15 +29,18 @@ class ClassifierService:
         
         # Defining the expert persona and precise guidelines for the AI
         system_instruction = """
-        You are a Senior Algorithms Professor and Competitive Programming Coach. 
-        Your task is to analyze problem descriptions and identify their 'Algorithmic Core'.
-
-        ANALYSIS GUIDELINES:
-        1. CATEGORY: Identify the general formal domain (e.g., 'Flow Networks', 'Dynamic Programming', 'Graph Theory').
-        2. SPECIFIC_TECHNIQUE: Be precise. Identify the specific transformation or reduction required.
-           EXAMPLES: 'Reduction to Max-Flow', 'Dummy Node for Multi-Source Reachability', 'Weight Function Transformation (Log-Scaling)'.
-        3. CATCHY_TITLE: Create a professional 3-5 word title for the problem.
-        4. SOLUTION_ESSENCE: Explain the 'Eureka' moment in 1-2 sentences.
+        You are a Teaching Assistant for the Algorithms course at Bar-Ilan University. 
+        Your goal is to simplify complex problems using the standard Israeli CS curriculum terminology.
+        
+        STRICT RULES:
+        1. LANGUAGE: All values in the JSON MUST be written in HEBREW.
+        2. NO MATH NOTATION: Never use $ symbols, LaTeX, or variables like f(e). Use plain Hebrew words (e.g., 'הזרימה', 'קיבול', 'צומת שורש').
+        3. HUMAN-FRIENDLY: Explain like a peer or a helpful TA. Avoid robotic or overly formal academic language.
+        4. CHRONOLOGICAL LOGIC: Provide a single string with 3-5 short, intuitive steps starting with a dash (-). Focus on the order of actions.
+        5. THE PUNCHLINE (The Catch): 
+           - Start by naming a famous Theorem, Lemma, or Property in Hebrew (e.g., 'משפט זרימה מקסימלית - חתך מינימלי', 'למת ההחלפה', 'תכונת תת-מבנה אופטימלי').
+           - Explain the "Eureka" moment: Why is this specific trick efficient? Focus on why we avoid a full re-calculation.
+        6. COMPLEXITY: Provide the Big-O notation .
         """
 
         user_input = f"""
@@ -46,11 +49,13 @@ class ClassifierService:
         {text}
         ---
         
-        Return ONLY a valid JSON object with EXACTLY these keys:
-        - catchyTitle
-        - categoryName
-        - specificTechnique
-        - solutionEssence
+      Return ONLY a JSON object with EXACTLY these keys:
+        - catchyTitle (str)
+        - categoryName (str)
+        - specificTechnique (str)
+        - chronologicalLogic (str: use dashes for steps in Hebrew)
+        - thePunchline (str: start with a famous theorem in Hebrew)
+        - runtimeComplexity (str: in Hebrew)
         """
         
         full_prompt = f"{system_instruction}\n\n{user_input}"
@@ -58,7 +63,7 @@ class ClassifierService:
         # Execute the AI generation asynchronously using the new SDK syntax
         # Using gemini-1.5-flash for speed and reliability in classification tasks
         response = await client.aio.models.generate_content(
-            model='gemini-1.5-flash',
+            model='gemini-3-flash-preview',
             contents=full_prompt
         )
         
@@ -87,7 +92,9 @@ class ClassifierService:
             catchyTitle=ai_data["catchyTitle"],
             categoryName=ai_data["categoryName"],
             specificTechnique=ai_data["specificTechnique"],
-            solutionEssence=ai_data["solutionEssence"],
+            chronologicalLogic=ai_data["chronologicalLogic"],
+            thePunchline=ai_data["thePunchline"],
+            runtimeComplexity=ai_data["runtimeComplexity"],
             confidenceScore=1.0,  # Default high confidence for Flash model
             createdAt=datetime.now(timezone.utc)
         )
