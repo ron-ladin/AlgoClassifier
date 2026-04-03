@@ -37,9 +37,10 @@ app = FastAPI(
 # CORS Configuration - Restricting access to explicitly trusted origins 
 # to mitigate Cross-Origin Resource Sharing vulnerabilities (e.g., CSRF).
 origins = [
-    "http://localhost:3000",  # React / Next.js local frontend
-    "http://localhost:8000",  # Local backend interactions / Swagger UI
-    # Note: Production domains should be appended here in the future
+    "http://localhost:3000", 
+    "http://localhost:8000",
+    "http://localhost:5173", 
+    "http://127.0.0.1:5173", 
 ]
 
 app.add_middleware(

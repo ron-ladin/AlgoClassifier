@@ -14,10 +14,12 @@ from app.security.auth import get_current_user
 
 router = APIRouter(prefix="/questions", tags=["Questions"])
 
-@router.get("/", response_model=List[QuestionSummary])
-async def list_questions(current_user: dict = Depends(get_current_user)):
+# 1. נתיב ההיסטוריה המפורש - חייב להיות לפני הנתיב הדינמי!
+@router.get("/history", response_model=List[QuestionSummary])
+async def list_history(current_user: dict = Depends(get_current_user)):
     return await user_service.get_user_questions(current_user["user_id"])
 
+# 2. נתיב השליפה לפי מזהה דינמי
 @router.get("/{question_id}", response_model=QuestionDetailResponse)
 async def get_question(question_id: str, current_user: dict = Depends(get_current_user)):
     question = await user_service.get_question_by_id(question_id)
@@ -25,6 +27,7 @@ async def get_question(question_id: str, current_user: dict = Depends(get_curren
         raise HTTPException(status_code=404, detail="Question not found")
     return question
 
+# 3. נתיב הניתוח והסיווג
 @router.post("/classify", response_model=QuestionResponse)
 async def classify_problem(request: ClassifyRequest, current_user: Dict = Depends(get_current_user)):
     try:
@@ -33,10 +36,10 @@ async def classify_problem(request: ClassifyRequest, current_user: Dict = Depend
             user_id=current_user["user_id"]
         ) 
     except Exception as e:
-        # Crucial for local debugging
-        traceback.print_exc()
+        traceback.print_exc() 
+        error_msg = str(e)
         
-        if "429" in str(e):
+        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
             raise HTTPException(status_code=429, detail="AI quota exceeded for today.")
             
-        raise HTTPException(status_code=500, detail="Internal server error during classification.")
+        raise HTTPException(status_code=500, detail=f"Internal error: {error_msg}")
