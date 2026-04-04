@@ -55,9 +55,9 @@ class UserService:
             async with session.start_transaction():
                 try:
                     delete_res = await self._get_collection("questions").delete_one(
-                        {"_id": q_oid, "userId": u_oid},
-                        session=session,
-                    )
+                    {"_id": q_oid, "userId": user_id},
+                    session=session,
+                )
                     if delete_res.deleted_count == 0:
                         raise HTTPException(status_code=404, detail="Question not found")
 
