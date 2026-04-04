@@ -3,7 +3,8 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import AuthPage from "../pages/AuthPage";
 import DashboardPage from "../pages/DashboardPage";
-import LandingPage from "../pages/LandingPage"; // <-- ייבוא חדש
+import LandingPage from "../pages/LandingPage";
+import QuestionsFoldersPage from "../pages/QuestionsFoldersPage";
 
 const ProtectedRoute = ({ children }: { children: ReactElement }) => {
   const { isAuthenticated } = useAuth();
@@ -66,9 +67,7 @@ const AppRoutes = () => {
         path="/questions"
         element={
           <ProtectedRoute>
-            <div className="text-white p-10">
-              Questions Page (Under Construction)
-            </div>
+            <QuestionsFoldersPage />
           </ProtectedRoute>
         }
       />

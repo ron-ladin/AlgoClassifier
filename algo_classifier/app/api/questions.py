@@ -48,5 +48,3 @@ async def classify_problem(request: ClassifyRequest, current_user: Dict = Depend
             raise HTTPException(status_code=429, detail="AI quota exceeded for today.")
             
         raise HTTPException(status_code=500, detail="Internal server error during classification.")
-
-        raise HTTPException(status_code=500, detail=f"Internal error: {error_msg}")
