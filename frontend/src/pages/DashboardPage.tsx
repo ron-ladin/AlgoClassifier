@@ -1,16 +1,18 @@
-import { useState } from 'react';
-import { Loader2, LogOut } from 'lucide-react';
-import DashboardLayout from '../components/layout/DashboardLayout';
-import SidebarHistory from '../components/SidebarHistory';
-import ResultCard from '../components/ResultCard';
-import { classifyQuestion } from '../api/services';
-import { useAuth } from '../context/useAuth';
-import type { QuestionDetailResponse } from '../types/api';
+import { useState } from "react";
+import { Loader2, LogOut, Home } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import DashboardLayout from "../components/layout/DashboardLayout";
+import SidebarHistory from "../components/SidebarHistory";
+import ResultCard from "../components/ResultCard";
+import { classifyQuestion } from "../api/services";
+import { useAuth } from "../context/useAuth";
+import type { QuestionDetailResponse } from "../types/api";
 
 const DashboardPage = () => {
   const { logout } = useAuth();
+  const navigate = useNavigate();
 
-  const [questionText, setQuestionText] = useState('');
+  const [questionText, setQuestionText] = useState("");
   const [result, setResult] = useState<QuestionDetailResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +22,7 @@ const DashboardPage = () => {
     const trimmed = questionText.trim();
 
     if (trimmed.length < 10) {
-      setError('Please paste a longer question (at least 10 characters).');
+      setError("Please paste a longer question (at least 10 characters).");
       return;
     }
 
@@ -29,34 +31,47 @@ const DashboardPage = () => {
       const data = await classifyQuestion(trimmed);
       setResult(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Classification failed.');
+      setError(err instanceof Error ? err.message : "Classification failed.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <DashboardLayout
-      sidebar={<SidebarHistory onSelectQuestion={setResult} />}
-    >
+    <DashboardLayout sidebar={<SidebarHistory onSelectQuestion={setResult} />}>
       <div className="mx-auto max-w-3xl space-y-6">
         <header className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-white">AlgoClassifier</h1>
-            <p className="text-gray-400">Analyze algorithmic questions and get structured insights.</p>
+            <h1 className="text-3xl font-bold text-white">Ask a Question</h1>
+            <p className="text-gray-400">
+              Analyze algorithmic questions and get structured insights.
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={logout}
-            className="inline-flex items-center gap-2 rounded-md border border-gray-700 px-3 py-2 text-sm text-gray-300 transition hover:border-gray-500 hover:text-white"
-          >
-            <LogOut className="h-4 w-4" />
-            Logout
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="inline-flex items-center gap-2 rounded-md border border-gray-700 px-3 py-2 text-sm text-gray-300 transition hover:border-indigo-500 hover:text-white"
+            >
+              <Home className="h-4 w-4" />
+              Home
+            </button>
+            <button
+              type="button"
+              onClick={logout}
+              className="inline-flex items-center gap-2 rounded-md border border-gray-700 px-3 py-2 text-sm text-gray-300 transition hover:border-gray-500 hover:text-white"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </button>
+          </div>
         </header>
 
         <section className="rounded-xl border border-gray-800 bg-gray-950/70 p-4 md:p-5">
-          <label htmlFor="question" className="mb-2 block text-sm font-medium text-gray-300">
+          <label
+            htmlFor="question"
+            className="mb-2 block text-sm font-medium text-gray-300"
+          >
             Paste algorithmic problem
           </label>
           <textarea

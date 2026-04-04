@@ -1,8 +1,9 @@
-import type { ReactElement } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/useAuth';
-import AuthPage from '../pages/AuthPage';
-import DashboardPage from '../pages/DashboardPage';
+import type { ReactElement } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
+import AuthPage from "../pages/AuthPage";
+import DashboardPage from "../pages/DashboardPage";
+import LandingPage from "../pages/LandingPage"; // <-- ייבוא חדש
 
 const ProtectedRoute = ({ children }: { children: ReactElement }) => {
   const { isAuthenticated } = useAuth();
@@ -44,14 +45,34 @@ const AppRoutes = () => {
           </PublicOnlyRoute>
         }
       />
+
       <Route
         path="/"
+        element={
+          <ProtectedRoute>
+            <LandingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ask"
         element={
           <ProtectedRoute>
             <DashboardPage />
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/questions"
+        element={
+          <ProtectedRoute>
+            <div className="text-white p-10">
+              Questions Page (Under Construction)
+            </div>
+          </ProtectedRoute>
+        }
+      />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
