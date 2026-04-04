@@ -5,7 +5,11 @@ import AuthPage from "../pages/AuthPage";
 import DashboardPage from "../pages/DashboardPage";
 import LandingPage from "../pages/LandingPage";
 import QuestionsFoldersPage from "../pages/QuestionsFoldersPage";
+import FolderDetailsPage from "../pages/FolderDetailsPage";
 
+/**
+ * Higher-Order Component to protect routes that require authentication.
+ */
 const ProtectedRoute = ({ children }: { children: ReactElement }) => {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
@@ -17,6 +21,9 @@ const ProtectedRoute = ({ children }: { children: ReactElement }) => {
   return children;
 };
 
+/**
+ * Higher-Order Component to restrict routes (like login/register) to unauthenticated users.
+ */
 const PublicOnlyRoute = ({ children }: { children: ReactElement }) => {
   const { isAuthenticated } = useAuth();
 
@@ -63,6 +70,8 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* Route for displaying the folders overview */}
       <Route
         path="/questions"
         element={
@@ -72,6 +81,17 @@ const AppRoutes = () => {
         }
       />
 
+      {/* Dynamic route for individual folder details. */}
+      <Route
+        path="/questions/folder/:slug"
+        element={
+          <ProtectedRoute>
+            <FolderDetailsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Catch-all route to redirect unrecognized URLs back to home */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

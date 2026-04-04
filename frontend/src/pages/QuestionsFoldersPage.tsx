@@ -4,8 +4,24 @@ import { Folder, ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import { getHistory } from "../api/services";
 import type { QuestionSummary } from "../types/api";
 
-// הגדרת טיפוס למבנה הנתונים המקובץ
 type GroupedQuestions = Record<string, QuestionSummary[]>;
+
+/**
+ * Generates a URL-friendly slug that supports Unicode (e.g., Hebrew).
+ * Instead of stripping non-English characters, it safely handles spaces and
+ * strips only URL-breaking characters.
+ * Time Complexity: O(L) where L is the string length.
+ */
+const generateSlug = (text: string): string => {
+  if (!text) return "uncategorized";
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[\/\\?#%]+/g, "") // Strip characters that break URLs
+    .replace(/[\s_]+/g, "-") // Replace spaces and underscores with dashes
+    .replace(/-+/g, "-") // Collapse multiple consecutive dashes
+    .replace(/(^-|-$)/g, ""); // Trim dashes from start and end
+};
 
 const QuestionsFoldersPage = () => {
   const navigate = useNavigate();
@@ -18,7 +34,6 @@ const QuestionsFoldersPage = () => {
       try {
         setIsLoading(true);
         setError(null);
-        // משיכת הרשימה השטוחה מהשרת (O(1) מבחינת קריאות רשת)
         const data = await getHistory();
         setQuestions(data);
       } catch (err) {
@@ -33,13 +48,10 @@ const QuestionsFoldersPage = () => {
     void fetchQuestions();
   }, []);
 
-  // שימוש ב-useMemo כדי לחשב מחדש את התיקיות רק כשהנתונים משתנים
-  // סיבוכיות זמן: O(N) כאשר N הוא מספר השאלות. סיבוכיות מקום: O(N).
   const groupedFolders = useMemo(() => {
     if (!questions || questions.length === 0) return {};
 
     return questions.reduce<GroupedQuestions>((acc, question) => {
-      // אם לשאלה אין קטגוריה, נכניס אותה לתיקייה כללית
       const category = question.categoryName || "Uncategorized";
 
       if (!acc[category]) {
@@ -50,23 +62,18 @@ const QuestionsFoldersPage = () => {
     }, {});
   }, [questions]);
 
-  // יצירת מערך שקל לרנדר (למשל, לקבל את שם התיקייה וכמות השאלות בה)
   const foldersList = Object.entries(groupedFolders).map(
     ([category, items]) => ({
       categoryName: category,
       count: items.length,
-      // ניצור "Slug" פשוט מתוך השם בשביל ה-URL העתידי
-      slug: category
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)+/g, ""),
+      // Utilize the new Unicode-safe slug generator
+      slug: generateSlug(category),
     }),
   );
 
   return (
     <div className="min-h-screen bg-gray-950 px-4 py-8 text-white sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-8">
-        {/* Header Section */}
         <header className="flex items-center gap-4 border-b border-gray-800 pb-6">
           <button
             onClick={() => navigate("/")}
@@ -83,7 +90,6 @@ const QuestionsFoldersPage = () => {
           </div>
         </header>
 
-        {/* Content Section */}
         <main>
           {isLoading && (
             <div className="flex h-64 items-center justify-center">
@@ -128,8 +134,12 @@ const QuestionsFoldersPage = () => {
               {foldersList.map((folder) => (
                 <button
                   key={folder.slug}
-                  // בעתיד, הנתיב הזה יוביל לעמוד רשימת השאלות שבתוך התיקייה
-                  onClick={() => navigate(`/questions/folder/${folder.slug}`)}
+                  // CRITICAL FIX: encodeURIComponent ensures Hebrew/Symbols are safely passed to the URL
+                  onClick={() =>
+                    navigate(
+                      `/questions/folder/${encodeURIComponent(folder.slug)}`,
+                    )
+                  }
                   className="group flex flex-col items-start gap-4 rounded-xl border border-gray-800 bg-gray-900 p-6 text-left transition hover:border-emerald-500 hover:bg-gray-950 hover:shadow-lg hover:shadow-emerald-900/20"
                 >
                   <div className="flex w-full items-center justify-between">
