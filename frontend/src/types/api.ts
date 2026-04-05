@@ -50,6 +50,7 @@ export interface QuestionDetailResponse {
   runtimeComplexity: string;
   isPublic: boolean;
   createdAt: string;
+  imageUrl?: string;
 }
 
 export interface ApiErrorResponse {

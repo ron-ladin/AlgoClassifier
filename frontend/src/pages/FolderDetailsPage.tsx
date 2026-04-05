@@ -1,16 +1,23 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
   Loader2,
   AlertCircle,
   FileText,
   Calendar,
   Clock,
+  Folder,
 } from "lucide-react";
 import { getHistory } from "../api/services";
 import type { QuestionSummary } from "../types/api";
 
+// Reusable UI components
+import PageHeader from "../components/ui/PageHeader";
+import GlassCard from "../components/ui/GlassCard";
+
+/**
+ * Safe slug generator for Hebrew and special characters.
+ */
 const generateSlug = (text: string): string => {
   if (!text) return "uncategorized";
   return text
@@ -30,148 +37,100 @@ const FolderDetailsPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch history data on component mount
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
         setIsLoading(true);
-        setError(null);
         const data = await getHistory();
         setAllQuestions(data);
       } catch (err) {
         setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to fetch folder contents.",
+          err instanceof Error ? err.message : "Failed to fetch content.",
         );
       } finally {
         setIsLoading(false);
       }
     };
-
     void fetchQuestions();
   }, []);
 
+  // Filter questions that belong to this specific folder slug
   const folderQuestions = useMemo(() => {
     if (!allQuestions.length || !slug) return [];
-
-    return allQuestions.filter((question) => {
-      const categoryName = question.categoryName || "Uncategorized";
-      const questionSlug = generateSlug(categoryName);
-      return questionSlug === slug;
-    });
+    return allQuestions.filter((q) => generateSlug(q.categoryName) === slug);
   }, [allQuestions, slug]);
 
-  /**
-   * Empty Folder Redirect Logic:
-   * If the fetch is complete without errors, and the current folder contains zero questions,
-   * we automatically redirect the user to the main questions directory.
-   * `replace: true` ensures this redirect doesn't trap the user in an infinite loop
-   * if they try to use the browser's back button.
-   */
+  // Safe title extraction
+  const displayTitle =
+    folderQuestions.length > 0
+      ? folderQuestions[0].categoryName
+      : "Folder Content";
+
+  // Auto-redirect if folder is empty after loading
   useEffect(() => {
     if (!isLoading && !error && folderQuestions.length === 0) {
       navigate("/questions", { replace: true });
     }
   }, [isLoading, error, folderQuestions.length, navigate]);
 
-  const displayTitle =
-    folderQuestions.length > 0
-      ? folderQuestions[0].categoryName
-      : "Folder Details";
-
   return (
-    <div className="min-h-screen bg-gray-950 px-4 py-8 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl space-y-8">
-        <header className="flex items-center justify-between border-b border-gray-800 pb-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate("/questions")}
-              className="rounded-md border border-gray-700 bg-gray-900 p-2 text-gray-400 transition hover:bg-gray-800 hover:text-white"
-              aria-label="Back to folders"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <div>
-              <h1 className="text-3xl font-bold text-emerald-400">
-                {displayTitle}
-              </h1>
-              <p className="text-gray-400 mt-1">
-                {!isLoading && !error && (
-                  <span>
-                    {folderQuestions.length}{" "}
-                    {folderQuestions.length === 1 ? "Problem" : "Problems"}{" "}
-                    stored
-                  </span>
-                )}
-              </p>
-            </div>
-          </div>
-        </header>
+    <div className="min-h-screen bg-transparent px-4 py-8 text-white sm:px-6 lg:px-8 relative z-10">
+      <div className="mx-auto max-w-5xl space-y-10">
+        <PageHeader
+          title={displayTitle}
+          backPath="/questions"
+          subtitle={
+            !isLoading &&
+            !error && (
+              <span>{folderQuestions.length} Problem(s) classified here</span>
+            )
+          }
+        />
 
         <main>
           {isLoading && (
             <div className="flex h-64 items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+              <Loader2 className="h-10 w-10 animate-spin text-brand-primary" />
             </div>
           )}
 
           {!isLoading && error && (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-red-800/50 bg-red-950/20 p-8 text-center text-red-400">
-              <AlertCircle className="mb-4 h-10 w-10 opacity-80" />
-              <p className="text-lg font-medium">{error}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-4 rounded-md border border-red-800 px-4 py-2 text-sm transition hover:bg-red-900/40"
-              >
-                Try Again
-              </button>
-            </div>
-          )}
-
-          {/* The empty state rendering will rarely be seen now due to the auto-redirect,
-              but it remains as a fallback for potential edge cases. */}
-          {!isLoading && !error && folderQuestions.length === 0 && (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-800 bg-gray-900/30 py-20 text-center">
-              <FileText className="mb-4 h-12 w-12 text-gray-600" />
-              <h3 className="text-xl font-semibold text-gray-300">
-                Redirecting...
-              </h3>
-            </div>
+            <GlassCard className="p-10 text-center text-red-400 border-red-900/30 bg-red-950/20">
+              <AlertCircle className="mb-4 mx-auto h-12 w-12 opacity-80" />
+              <p className="text-xl font-medium mb-6">{error}</p>
+            </GlassCard>
           )}
 
           {!isLoading && !error && folderQuestions.length > 0 && (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-5">
               {folderQuestions.map((question) => (
-                <button
+                <GlassCard
                   key={question.id}
+                  isInteractive={true}
                   onClick={() => navigate(`/questions/detail/${question.id}`)}
-                  className="group flex flex-col items-start justify-between gap-4 rounded-xl border border-gray-800 bg-gray-900 p-5 text-left transition hover:border-indigo-500 hover:bg-gray-950 sm:flex-row sm:items-center"
+                  className="group p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6"
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="mt-1 rounded-lg bg-indigo-950/50 p-2 text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition">
-                      <FileText className="h-6 w-6" />
+                  <div className="flex items-start sm:items-center gap-5">
+                    <div className="rounded-2xl bg-gray-800/50 p-3 text-brand-primary group-hover:bg-brand-primary/20 group-hover:scale-110 transition-all">
+                      <FileText className="h-7 w-7" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-white group-hover:text-indigo-400 transition">
+                      <h3 className="text-xl font-bold text-gray-100 group-hover:text-brand-primary transition-colors">
                         {question.catchyTitle}
                       </h3>
-                      <div className="mt-2 flex items-center gap-4 text-xs font-medium text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3.5 w-3.5" />
+                      <div className="mt-2 flex items-center gap-4 text-xs font-semibold text-gray-500 uppercase">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="h-4 w-4" />
                           {new Date(question.createdAt).toLocaleDateString()}
-                        </span>
-                        <span className="flex items-center gap-1 rounded bg-gray-800 px-2 py-0.5 text-gray-300">
-                          <Clock className="h-3 w-3" />
-                          ID: {question.id.substring(0, 8)}...
                         </span>
                       </div>
                     </div>
                   </div>
-
-                  <div className="hidden text-sm font-semibold text-indigo-500 opacity-0 transition group-hover:opacity-100 sm:block">
+                  <div className="hidden sm:block text-sm font-bold text-brand-secondary opacity-0 group-hover:opacity-100 transition-opacity">
                     View Details &rarr;
                   </div>
-                </button>
+                </GlassCard>
               ))}
             </div>
           )}

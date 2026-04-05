@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     # How long a user stays logged in (Default: 24 hours)
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
 
+    # Cloudinary Settings for Image Uploads
+    CLOUDINARY_CLOUD_NAME: str = "dsxo7cuxr"
+    CLOUDINARY_API_KEY: str = "742548134815235"
+    CLOUDINARY_API_SECRET: str = "obZbgajKqFyOgtbWxx_i5YcvdJM"
+
     @field_validator("MONGODB_URI")
     @classmethod
     def validate_mongodb_uri(cls, value: str) -> str:

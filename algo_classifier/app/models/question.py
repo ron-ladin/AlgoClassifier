@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
-
+from typing import Optional
 class QuestionDocument(BaseModel):
     """
     Pydantic model for storage in MongoDB.
@@ -20,6 +20,6 @@ class QuestionDocument(BaseModel):
     chronologicalLogic: str
     thePunchline: str
     runtimeComplexity: str
-    
     confidenceScore: float
     createdAt: datetime
+    imageUrl: Optional[str] = None

@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { ChevronDown, Folder, History, RefreshCw, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  Folder,
+  History,
+  RefreshCw,
+  Trash2,
+  Search,
+} from "lucide-react";
 import {
   deleteQuestion,
   getHistory,
@@ -7,6 +14,7 @@ import {
 } from "../api/services";
 import type { QuestionDetailResponse, QuestionSummary } from "../types/api";
 
+// We use our design tokens directly via Tailwind classes
 interface SidebarHistoryProps {
   onSelectQuestion: (question: QuestionDetailResponse) => void;
   refreshTrigger?: number;
@@ -25,11 +33,8 @@ const SidebarHistory = ({
   const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
 
   const loadHistory = async (refresh = false) => {
-    if (refresh) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
+    if (refresh) setIsRefreshing(true);
+    else setIsLoading(true);
 
     setError(null);
     try {
@@ -63,20 +68,15 @@ const SidebarHistory = ({
       const detail = await getQuestionDetails(id);
       onSelectQuestion(detail);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed loading question details.",
-      );
+      setError(err instanceof Error ? err.message : "Failed loading details.");
     }
   };
 
   const handleDelete = async (id: string) => {
-    setError(null);
     try {
       await deleteQuestion(id);
       setItems((prev) => prev.filter((item) => item.id !== id));
-      if (selectedId === id) {
-        setSelectedId(null);
-      }
+      if (selectedId === id) setSelectedId(null);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed deleting question.",
@@ -85,23 +85,17 @@ const SidebarHistory = ({
   };
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
-  const filteredItems = normalizedSearch
-    ? items.filter((item) => {
-        const haystack =
-          `${item.catchyTitle} ${item.categoryName}`.toLowerCase();
-        return haystack.includes(normalizedSearch);
-      })
-    : items;
+  const filteredItems = items.filter((item) =>
+    `${item.catchyTitle} ${item.categoryName}`
+      .toLowerCase()
+      .includes(normalizedSearch),
+  );
 
-  const groupByCategory = (
-    historyItems: QuestionSummary[],
-  ): Record<string, QuestionSummary[]> => {
+  const groupByCategory = (historyItems: QuestionSummary[]) => {
     return historyItems.reduce<Record<string, QuestionSummary[]>>(
       (acc, item) => {
         const key = item.categoryName || "Uncategorized";
-        if (!acc[key]) {
-          acc[key] = [];
-        }
+        if (!acc[key]) acc[key] = [];
         acc[key].push(item);
         return acc;
       },
@@ -122,17 +116,17 @@ const SidebarHistory = ({
   };
 
   return (
-    <section className="flex h-full flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
-          <History className="h-5 w-5 text-indigo-400" />
-          Question History
+    <section className="flex h-full flex-col gap-6 relative z-10">
+      {/* Header with Glass Style */}
+      <div className="flex items-center justify-between border-b border-surface-border pb-4">
+        <h2 className="flex items-center gap-2 text-xl font-bold text-white">
+          <History className="h-5 w-5 text-brand-primary" />
+          History
         </h2>
         <button
           type="button"
           onClick={() => void loadHistory(true)}
-          className="rounded-md border border-gray-700 p-2 text-gray-300 transition hover:border-gray-500 hover:text-white"
-          aria-label="Refresh history"
+          className="rounded-full p-2 text-gray-400 transition-all hover:bg-surface-hover hover:text-white"
           disabled={isLoading || isRefreshing}
         >
           <RefreshCw
@@ -141,97 +135,86 @@ const SidebarHistory = ({
         </button>
       </div>
 
+      {/* Modern Search Input */}
+      <div className="relative group">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 group-focus-within:text-brand-primary transition-colors" />
+        <input
+          type="search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search analyses..."
+          className="w-full rounded-xl border border-surface-border bg-gray-950/40 py-2.5 pl-10 pr-4 text-sm text-gray-200 outline-none transition-all focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+        />
+      </div>
+
+      {/* Error & Loading States */}
       {error && (
-        <p className="rounded-md border border-red-700 bg-red-950/40 p-2 text-sm text-red-300">
+        <p className="text-xs text-red-400 bg-red-950/20 p-2 rounded-lg border border-red-900/30">
           {error}
         </p>
       )}
 
-      <div>
-        <input
-          type="search"
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Search history..."
-          className="w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-200 outline-none ring-indigo-500 transition focus:ring-2"
-          aria-label="Search history"
-        />
-      </div>
-
       {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 6 }).map((_, index) => (
+        <div className="space-y-3">
+          {[1, 2, 3, 4].map((i) => (
             <div
-              key={index}
-              className="h-10 animate-pulse rounded-md bg-gray-800"
+              key={i}
+              className="h-12 animate-pulse rounded-xl bg-surface-border/20"
             />
           ))}
         </div>
-      ) : filteredItems.length === 0 ? (
-        <p className="rounded-md border border-gray-800 bg-gray-900 p-3 text-sm text-gray-400">
-          No previous analyses yet.
-        </p>
       ) : (
-        <ul className="space-y-2 overflow-y-auto pr-1">
-          {orderedCategories.map((categoryName) => {
-            const categoryItems = groupedItems[categoryName];
-            const isOpen = openFolders[categoryName] ?? true;
-
+        <ul className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+          {orderedCategories.map((category) => {
+            const isOpen = openFolders[category] ?? true;
             return (
-              <li
-                key={categoryName}
-                className="rounded-md border border-gray-800 bg-gray-900/80"
-              >
+              <li key={category} className="space-y-1">
                 <button
-                  type="button"
-                  onClick={() => toggleFolder(categoryName)}
-                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm text-gray-200 transition hover:text-white"
-                  aria-expanded={isOpen}
+                  onClick={() => toggleFolder(category)}
+                  className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-sm font-bold text-gray-400 hover:bg-surface-hover hover:text-white transition-all"
                 >
                   <span className="flex items-center gap-2">
-                    <Folder className="h-4 w-4 text-indigo-300" />
-                    <span className="font-medium">{categoryName}</span>
-                    <span className="text-xs text-gray-400">
-                      ({categoryItems.length})
+                    <Folder
+                      className={`h-4 w-4 ${isOpen ? "text-brand-secondary" : "text-gray-600"}`}
+                    />
+                    {category}
+                    <span className="text-[10px] opacity-50 bg-gray-800 px-1.5 py-0.5 rounded-md">
+                      {groupedItems[category].length}
                     </span>
                   </span>
                   <ChevronDown
-                    className={`h-4 w-4 text-gray-400 transition ${isOpen ? "" : "-rotate-90"}`}
+                    className={`h-4 w-4 transition-transform duration-300 ${isOpen ? "" : "-rotate-90"}`}
                   />
                 </button>
 
                 {isOpen && (
-                  <ul className="space-y-2 border-t border-gray-800 p-2">
-                    {categoryItems.map((item) => (
-                      <li key={item.id}>
-                        <div
-                          className={`rounded-md border p-2 text-left text-sm transition ${
+                  <ul className="mt-1 space-y-1 ml-2 border-l border-surface-border pl-2">
+                    {groupedItems[category].map((item) => (
+                      <li key={item.id} className="group relative">
+                        <button
+                          onClick={() => void handleSelect(item.id)}
+                          className={`w-full rounded-lg p-2.5 text-left text-xs transition-all ${
                             selectedId === item.id
-                              ? "border-indigo-500 bg-indigo-950/40 text-indigo-200"
-                              : "border-gray-800 bg-gray-900 text-gray-300 hover:border-gray-700 hover:text-white"
+                              ? "bg-brand-primary/20 text-brand-primary border border-brand-primary/30"
+                              : "text-gray-400 hover:bg-surface-hover hover:text-white border border-transparent"
                           }`}
                         >
-                          <button
-                            type="button"
-                            onClick={() => void handleSelect(item.id)}
-                            className="w-full text-left"
-                          >
-                            <p className="line-clamp-2 font-medium">
-                              {item.catchyTitle}
-                            </p>
-                          </button>
-                          <div className="mt-2 flex justify-end">
-                            <button
-                              type="button"
-                              onClick={() => void handleDelete(item.id)}
-                              className="inline-flex items-center gap-1 rounded border border-red-800/70 px-2 py-1 text-xs text-red-300 transition hover:border-red-600 hover:text-red-200"
-                              aria-label={`Delete ${item.catchyTitle}`}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Delete
-                            </button>
-                          </div>
-                        </div>
+                          <p className="line-clamp-1 font-medium">
+                            {item.catchyTitle}
+                          </p>
+                          <p className="mt-1 text-[10px] opacity-40">
+                            {new Date(item.createdAt).toLocaleDateString()}
+                          </p>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleDelete(item.id);
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-gray-600 opacity-0 hover:bg-red-950/40 hover:text-red-400 transition-all group-hover:opacity-100"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </li>
                     ))}
                   </ul>

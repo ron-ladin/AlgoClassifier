@@ -46,3 +46,4 @@ class QuestionDetailResponse(BaseModel):
     thePunchline: str
     runtimeComplexity: str
     createdAt: datetime
+    imageUrl: Optional[str] = None

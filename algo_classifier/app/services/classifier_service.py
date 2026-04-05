@@ -6,12 +6,24 @@ from google.genai import errors
 from google.genai.types import GenerateContentConfig, Part
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_not_exception_type
 
+# --- NEW: Import Cloudinary ---
+import cloudinary
+import cloudinary.uploader
+
 from app.core.config import settings
 from app.models.question import QuestionDocument
 from app.services.user_service import user_service
 
 # Initialize the modern Gemini Client
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
+
+# --- NEW: Initialize Cloudinary Configuration ---
+# This connects our backend to your Cloudinary account using the keys from .env
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+    api_key=settings.CLOUDINARY_API_KEY,
+    api_secret=settings.CLOUDINARY_API_SECRET
+)
 
 class ClassifierService:
     @retry(
@@ -21,57 +33,55 @@ class ClassifierService:
     )
     async def _call_gemini(self, text: str, image_base64: str = None) -> dict:
         system_instruction = """
-        You are a rigorous algorithm-classification assistant.
-        Your task is to infer algorithmic structure, optimization properties, and justification patterns from a problem description or an image of a problem.
+        You are a senior algorithmic teaching assistant at a university. 
+        Your task is to accurately explain the solution to complex algorithmic problems to a computer science student.
+
+        ASSUMED KNOWLEDGE (BLACK BOXES):
+        You MUST treat the following algorithms and techniques as black boxes. DO NOT explain how they work from scratch. You can use them directly or apply variations to them to solve the specific problem:
+        - Regular Matrix Multiplication
+        - Fast Boolean Matrix Multiplication (using \omega)
+        - Fast Fourier Transform (FFT)
+        - Bellman-Ford
+        - Dijkstra
+        - Prim
+        - Kruskal
+        - Floyd-Warshall
+        - Johnson
+        - Heavy-Light Decomposition
+        - Seidel
+        - Triangle Verification
+        - Strongly Connected Components (SCC / GSCC / Kosaraju / Tarjan)
+        - Topological Sort
+        - Depth-First Search (DFS)
+        - Breadth-First Search (BFS)
+
+        STRICT ALGORITHMIC RULES TO ENFORCE:
+        - When referring to Kruskal's algorithm, you must always explicitly remember and mention that the edges need to be sorted first.
 
         MANDATORY OUTPUT FORMAT:
-        - Return JSON only.
-        - Return EXACTLY the requested keys.
-        - Every textual field must be concise, formal, and course-level.
+        - Return ONLY valid JSON.
+        - The language for all value fields MUST be Hebrew (except for standard math/algorithmic notation like O(V+E)).
+        - DO NOT wrap the output in Markdown code blocks (no ```json).
 
-        FEW-SHOT ABSTRACT REASONING TEMPLATES (DO NOT OUTPUT THESE TEMPLATES VERBATIM):
-        Template A — Dynamic Optimization Pattern:
-        1) Identify a decomposable objective and define subproblems.
-        2) Verify optimal substructure and overlapping subproblems.
-        3) Derive a recurrence and state boundary conditions.
-        4) Explain why the transition preserves correctness.
-
-        Template B — Greedy Correctness Pattern:
-        1) Identify a local decision rule.
-        2) State the safe-choice condition.
-        3) Argue exchange/monotonicity/cut-style correctness.
-        4) Explain why local optimality leads to global optimality.
-
-        Template C — Graph/Flow/Cut Pattern:
-        1) Map entities to vertices/edges or state-space transitions.
-        2) Identify invariant/feasibility constraints.
-        3) Select the governing property (reachability, shortest path, cut separation, residual progress).
-        4) Justify efficiency via structural bounds.
-
-        STRICT LANGUAGE POLICY:
-        1) Hebrew-first output.
-        2) CRITICAL: In free-text Hebrew fields (catchyTitle, categoryName, specificTechnique, chronologicalLogic, thePunchline), it is strictly forbidden to include English or Latin letters.
-        3) Use short Hebrew statements with clear logic.
-        4) No Markdown code fences and no extra keys.
-        5) runtimeComplexity may contain asymptotic notation if needed.
+        JSON STRUCTURE & CHAIN OF THOUGHT:
+        You must return exactly these keys, mapping the academic content to these specific field names:
+        - "_internalScratchpad": (string) Use this strictly for your own Chain of Thought. Briefly analyze the problem constraints, pick the right black-box, and plan the solution before writing the actual output. This will not be shown to the user.
+        - "catchyTitle": (string) A short, precise Hebrew title for the problem.
+        - "categoryName": (string) The general algorithm family (e.g., Graphs, Dynamic Programming, Greedy).
+        - "specificTechnique": (string) THIS IS THE INTUITIVE ANSWER. Provide a high-level, clear explanation of the approach. Why did we choose this variation? What is the core trick?
+        - "chronologicalLogic": (string) THIS IS THE FORMAL ANSWER. Provide a rigorous, exam-style step-by-step formal proof or algorithm breakdown.
+        - "thePunchline": (string) THIS IS THE GUIDING THEOREM. Name a famous guiding theorem if applicable (e.g., "לפי משפט Min-Cut Max-Flow..."). If none is highly relevant, return "אין משפט מנחה ספציפי".
+        - "runtimeComplexity": (string) The final time and space complexity with a brief justification.
         """
 
         # Handle cases where user provided an image but no text
         problem_text = text if text.strip() else "ראה תמונה מצורפת של הבעיה האלגוריתמית."
 
         user_input = f"""
-        Analyze this problem description:
+        Solve this problem:
         ---
         {problem_text}
         ---
-        
-        Return ONLY a JSON object with EXACTLY these keys:
-        - catchyTitle (str)
-        - categoryName (str)
-        - specificTechnique (str)
-        - chronologicalLogic (str: use dashes for steps in Hebrew)
-        - thePunchline (str: start with a famous theorem in Hebrew)
-        - runtimeComplexity (str: in Hebrew)
         """
         
         full_prompt = f"{system_instruction}\n\n{user_input}"
@@ -83,7 +93,6 @@ class ClassifierService:
         if image_base64:
             try:
                 # The frontend sends a Data URL format: "data:image/png;base64,iVBORw0KGgo..."
-                # We split by comma to isolate the metadata from the actual base64 string
                 header, encoded_string = image_base64.split(",", 1)
                 
                 # Extract the MIME type (e.g., "image/png") from the header
@@ -102,7 +111,7 @@ class ClassifierService:
 
         response = await client.aio.models.generate_content(
             model='gemini-2.5-flash',
-            contents=contents_payload, # We now pass the array containing text and (optionally) the image
+            contents=contents_payload, 
             config= GenerateContentConfig(
                 response_mime_type="application/json",
             )
@@ -123,6 +132,21 @@ class ClassifierService:
         # If no text was provided, explicitly note that in the originalText field for history reference
         final_text = text if text.strip() else "[Image Analysis Only]"
 
+        # --- NEW: Upload the image to Cloudinary and get the secure URL ---
+        secure_image_url = None
+        if image_base64:
+            try:
+                # We upload the base64 string directly to Cloudinary
+                upload_result = cloudinary.uploader.upload(
+                    image_base64,
+                    folder="algoclassifier/questions"
+                )
+                # We extract the public URL so the frontend can display it
+                secure_image_url = upload_result.get("secure_url")
+            except Exception as e:
+                print(f"Failed to upload image to Cloudinary: {str(e)}")
+        # -----------------------------------------------------------------
+
         question_doc = QuestionDocument(
             userId=user_id,
             isPublic=False,
@@ -134,6 +158,7 @@ class ClassifierService:
             thePunchline=ai_data.get("thePunchline", "Not specified"),
             runtimeComplexity=ai_data.get("runtimeComplexity", "Not specified"),
             confidenceScore=1.0,
+            imageUrl=secure_image_url, # <-- ADD THE URL TO THE DATABASE
             createdAt=datetime.now(timezone.utc)
         )
         
