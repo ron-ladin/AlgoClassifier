@@ -11,3 +11,4 @@ tenacity
 google-genai
 email-validator
 bcrypt==3.2.2
+cloudinary
