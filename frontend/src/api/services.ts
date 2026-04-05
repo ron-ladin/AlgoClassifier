@@ -1,5 +1,4 @@
 import axios, { AxiosError } from "axios";
-import axiosClient from "./axiosClient";
 import type {
   ApiErrorResponse,
   ClassifyRequest,
@@ -10,6 +9,8 @@ import type {
   RegisterRequest,
   RegisterResponse,
 } from "../types/api";
+import axiosClient from "./axiosClient";
+import type { TutorResponse } from "../types/api";
 
 const normalizeQuestionSummary = (
   item: Record<string, unknown>,
@@ -173,4 +174,39 @@ export const deleteQuestion = async (id: string): Promise<void> => {
   } catch (error) {
     throw new Error(extractErrorMessage(error));
   }
+};
+/**
+ * Sends a follow-up question to the AI Tutor backend.
+ *
+ * @param questionId The unique identifier of the algorithm question.
+ * @param message The user's new question text.
+ * @returns A Promise that resolves to the AI's response (TutorResponse).
+ */
+export const askTutorQuestion = async (
+  questionId: string,
+  message: string,
+): Promise<TutorResponse> => {
+  // We use our imported axiosClient to make a POST request to the correct endpoint.
+  // We pass the user's message in the body of the request.
+  const response = await axiosClient.post(`/questions/${questionId}/tutor`, {
+    message,
+  });
+
+  // The backend sends back an object with the AI's role, content, and timestamp.
+  // We extract and return just the data part.
+  return response.data;
+};
+
+/**
+ * Fetches up to 3 similar questions based on the algorithm's vector embedding.
+ * This helps the user find related problems they have solved in the past.
+ * * @param questionId The ID of the current question being viewed.
+ * @returns A Promise containing an array of QuestionSummary objects.
+ */
+export const getSimilarQuestions = async (
+  questionId: string,
+): Promise<QuestionSummary[]> => {
+  // Makes a GET request to our new semantic search endpoint
+  const response = await axiosClient.get(`/questions/${questionId}/similar`);
+  return response.data;
 };

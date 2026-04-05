@@ -1,6 +1,16 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
-from typing import Optional
+from pydantic import BaseModel, ConfigDict, Field
+from typing import Optional, List
+
+class TutorMessage(BaseModel):
+    """
+    Represents a single message in the AI Tutor chat.
+    This is an embedded document inside the main QuestionDocument.
+    """
+    role: str 
+    content: str 
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
 class QuestionDocument(BaseModel):
     """
     Pydantic model for storage in MongoDB.
@@ -9,8 +19,8 @@ class QuestionDocument(BaseModel):
     model_config = ConfigDict(strict=True, extra="forbid")
 
     # Ownership and Privacy management
-    userId: str                   # Extracted from JWT token
-    isPublic: bool = False        # Always private by default upon creation
+    userId: str                   
+    isPublic: bool = False        
 
     # Question Content (AI Generated)
     originalText: str
@@ -23,3 +33,5 @@ class QuestionDocument(BaseModel):
     confidenceScore: float
     createdAt: datetime
     imageUrl: Optional[str] = None
+    tutorHistory: List[TutorMessage] = Field(default_factory=list)
+    embedding: Optional[List[float]] = None

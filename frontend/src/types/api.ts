@@ -51,9 +51,25 @@ export interface QuestionDetailResponse {
   isPublic: boolean;
   createdAt: string;
   imageUrl?: string;
+  tutorHistory?: TutorMessage[];
 }
 
 export interface ApiErrorResponse {
   detail?: string;
   message?: string;
+}
+export interface TutorMessage {
+  role: string;
+  content: string;
+  timestamp: string;
+}
+
+export interface TutorRequest {
+  message: string;
+}
+
+export interface TutorResponse {
+  role: string;
+  content: string;
+  timestamp: string;
 }

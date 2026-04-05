@@ -47,3 +47,17 @@ class QuestionDetailResponse(BaseModel):
     runtimeComplexity: str
     createdAt: datetime
     imageUrl: Optional[str] = None
+
+class TutorRequest(BaseModel):
+    """
+    Data expected from the frontend when a user asks a follow-up question.
+    """
+    message: str = Field(..., min_length=1, description="The follow-up question asked by the user")
+
+class TutorResponse(BaseModel):
+    """
+    Data returned to the frontend after the AI responds.
+    """
+    role: str = Field(description="Who is speaking. Usually 'ai' or 'model'")
+    content: str = Field(description="The response text from the AI Tutor")
+    timestamp: datetime = Field(description="When the response was generated")

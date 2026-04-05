@@ -176,6 +176,31 @@ class UserService:
                     await session.abort_transaction()
                     logger.error(f"Transaction failed: {str(e)}")
                     raise e
+    async def add_tutor_messages(self, question_id: str, messages: list) -> None:
+        """
+        Appends a list of new chat messages to the tutorHistory array of a specific question.
+        This allows the AI Tutor to remember the conversation context.
+        
+        Args:
+            question_id (str): The MongoDB ID of the question document.
+            messages (list): A list of message dictionaries to append (e.g., user message and AI reply).
+        """
+        # Validate that the provided ID string is a valid MongoDB ObjectID format
+        if not ObjectId.is_valid(question_id):
+            raise HTTPException(status_code=400, detail="Invalid question ID format")
 
+        collection = self._get_collection("questions")
+        
+        # We use $push to add items to an array. 
+        # Because we are adding multiple messages at once, we must use the $each modifier.
+        # This operation is atomic, meaning it happens safely in a single database step.
+        update_result = await collection.update_one(
+            {"_id": ObjectId(question_id)},
+            {"$push": {"tutorHistory": {"$each": messages}}}
+        )
+
+        # If matched_count is 0, it means no document with this ID exists in the database
+        if update_result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Question not found")
 # Singleton instance
 user_service = UserService()
