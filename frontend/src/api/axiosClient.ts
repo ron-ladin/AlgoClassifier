@@ -1,11 +1,11 @@
-import axios from 'axios';
-import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios from "axios";
+import type { AxiosError, InternalAxiosRequestConfig } from "axios";
 
-const API_BASE_URL = 'http://localhost:8000';
-const ACCESS_TOKEN_KEY = 'access_token';
+const API_BASE_URL = "http://localhost:8000";
+const ACCESS_TOKEN_KEY = "access_token";
 
 const axiosClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: "https://algoclassifier.onrender.com",
   timeout: 15000,
 });
 
@@ -27,8 +27,11 @@ axiosClient.interceptors.response.use(
   (error: AxiosError) => {
     if (error.response?.status === 401) {
       localStorage.clear();
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        window.location.assign('/login');
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname !== "/login"
+      ) {
+        window.location.assign("/login");
       }
     }
 
