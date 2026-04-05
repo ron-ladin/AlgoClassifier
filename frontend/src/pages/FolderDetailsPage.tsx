@@ -11,28 +11,19 @@ import {
 import { getHistory } from "../api/services";
 import type { QuestionSummary } from "../types/api";
 
-/**
- * Normalizes a given string to a URL-friendly slug supporting Unicode.
- * This MUST mirror the implementation in QuestionsFoldersPage precisely
- * to ensure deterministic O(1) string matching against the decoded URL parameter.
- * Time Complexity: O(L) where L is the string length.
- */
 const generateSlug = (text: string): string => {
   if (!text) return "uncategorized";
   return text
     .trim()
     .toLowerCase()
-    .replace(/[\/\\?#%]+/g, "") // Strip characters that break URLs
-    .replace(/[\s_]+/g, "-") // Replace spaces and underscores with dashes
-    .replace(/-+/g, "-") // Collapse multiple consecutive dashes
-    .replace(/(^-|-$)/g, ""); // Trim dashes from start and end
+    .replace(/[\/\\?#%]+/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/(^-|-$)/g, "");
 };
 
 const FolderDetailsPage = () => {
   const navigate = useNavigate();
-
-  // Extract the specific folder slug from the URL parameters defined in AppRoutes.
-  // Note: react-router-dom automatically decodes the URI component here.
   const { slug } = useParams<{ slug: string }>();
 
   const [allQuestions, setAllQuestions] = useState<QuestionSummary[]>([]);
@@ -44,7 +35,6 @@ const FolderDetailsPage = () => {
       try {
         setIsLoading(true);
         setError(null);
-
         const data = await getHistory();
         setAllQuestions(data);
       } catch (err) {
@@ -67,10 +57,22 @@ const FolderDetailsPage = () => {
     return allQuestions.filter((question) => {
       const categoryName = question.categoryName || "Uncategorized";
       const questionSlug = generateSlug(categoryName);
-      // Strictly compare the calculated slug to the decoded URL slug
       return questionSlug === slug;
     });
   }, [allQuestions, slug]);
+
+  /**
+   * Empty Folder Redirect Logic:
+   * If the fetch is complete without errors, and the current folder contains zero questions,
+   * we automatically redirect the user to the main questions directory.
+   * `replace: true` ensures this redirect doesn't trap the user in an infinite loop
+   * if they try to use the browser's back button.
+   */
+  useEffect(() => {
+    if (!isLoading && !error && folderQuestions.length === 0) {
+      navigate("/questions", { replace: true });
+    }
+  }, [isLoading, error, folderQuestions.length, navigate]);
 
   const displayTitle =
     folderQuestions.length > 0
@@ -126,15 +128,14 @@ const FolderDetailsPage = () => {
             </div>
           )}
 
+          {/* The empty state rendering will rarely be seen now due to the auto-redirect,
+              but it remains as a fallback for potential edge cases. */}
           {!isLoading && !error && folderQuestions.length === 0 && (
             <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-800 bg-gray-900/30 py-20 text-center">
               <FileText className="mb-4 h-12 w-12 text-gray-600" />
               <h3 className="text-xl font-semibold text-gray-300">
-                No questions found
+                Redirecting...
               </h3>
-              <p className="mt-2 text-gray-500">
-                This folder appears to be empty or the URL is invalid.
-              </p>
             </div>
           )}
 

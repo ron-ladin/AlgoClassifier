@@ -41,18 +41,31 @@ const normalizeQuestionSummary = (
   };
 };
 
+/**
+ * Extracts and formats error messages from API responses.
+ * Now handles complex validation errors from FastAPI seamlessly.
+ */
 const extractErrorMessage = (error: unknown): string => {
   if (!axios.isAxiosError(error)) {
     return "Unexpected error occurred.";
   }
 
-  const axiosError = error as AxiosError<ApiErrorResponse>;
-  return (
-    axiosError.response?.data?.detail ||
-    axiosError.response?.data?.message ||
-    axiosError.message ||
-    "Request failed."
-  );
+  const responseData = error.response?.data;
+
+  // Handle FastAPI validation errors (which arrive as an array of objects in 'detail')
+  if (responseData?.detail && Array.isArray(responseData.detail)) {
+    const firstError = responseData.detail[0];
+    const fieldName =
+      firstError.loc && firstError.loc.length > 1 ? firstError.loc[1] : "Field";
+    return `${fieldName}: ${firstError.msg}`;
+  }
+
+  // Handle standard string error details
+  if (typeof responseData?.detail === "string") {
+    return responseData.detail;
+  }
+
+  return responseData?.message || error.message || "Request failed.";
 };
 
 export const login = async (
@@ -92,11 +105,22 @@ export const register = async (
   }
 };
 
+/**
+ * Sends a classification request to the backend.
+ * Now supports an optional base64 image payload for multi-modal processing.
+ */
 export const classifyQuestion = async (
   text: string,
+  imageBase64?: string,
 ): Promise<QuestionDetailResponse> => {
   try {
     const payload: ClassifyRequest = { text };
+
+    // Inject the image into the payload only if it was provided
+    if (imageBase64) {
+      payload.image_base64 = imageBase64;
+    }
+
     const response = await axiosClient.post<QuestionDetailResponse>(
       "/questions/classify",
       payload,

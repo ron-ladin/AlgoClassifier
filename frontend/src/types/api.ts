@@ -26,6 +26,7 @@ export interface RegisterResponse {
 
 export interface ClassifyRequest {
   text: string;
+  image_base64?: string;
 }
 
 export interface QuestionSummary {
@@ -38,6 +39,9 @@ export interface QuestionSummary {
 }
 
 export interface QuestionDetailResponse {
+  // Added the missing fields to align with the backend schema and UI requirements
+  id: string;
+  originalText: string;
   catchyTitle: string;
   categoryName: string;
   specificTechnique: string;

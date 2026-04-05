@@ -32,15 +32,16 @@ async def delete_question(question_id: str, current_user: dict = Depends(get_cur
     await user_service.delete_question_with_transaction(question_id, current_user["user_id"])
     return None
 
-# 3. נתיב הניתוח והסיווג
 @router.post("/classify", response_model=QuestionResponse)
 async def classify_problem(request: ClassifyRequest, current_user: Dict = Depends(get_current_user)):
     try:
         return await classifier_service.classify_and_save(
             text=request.text, 
-            user_id=current_user["user_id"]
+            user_id=current_user["user_id"],
+            image_base64=request.image_base64
         ) 
     except Exception as e:
+        import traceback
         traceback.print_exc() 
         error_msg = str(e)
         

@@ -1,10 +1,24 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, model_validator
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 class ClassifyRequest(BaseModel):
-    text: str = Field(..., min_length=10, description="The raw algorithmic problem text")
-    model_config = ConfigDict(strict=True)
+    # Default is empty string. Removed ConfigDict(strict=True) to allow web-safe coercion.
+    text: str = Field(default="", description="The raw algorithmic problem text")
+    image_base64: Optional[str] = Field(default=None, description="Base64 encoded image string")
+
+    @model_validator(mode='after')
+    def validate_content_presence(self):
+        # Safe string handling in case the frontend sends null/None
+        safe_text = self.text if self.text else ""
+        has_text = len(safe_text.strip()) >= 10
+        
+        has_image = bool(self.image_base64)
+        
+        if not has_text and not has_image:
+            raise ValueError("You must provide either problem text (min 10 chars) or an image attachment.")
+        
+        return self
 
 class QuestionResponse(BaseModel):
     catchyTitle: str
@@ -15,18 +29,14 @@ class QuestionResponse(BaseModel):
     runtimeComplexity: str
     isPublic: bool
     createdAt: datetime
-    model_config = ConfigDict(from_attributes=True)
 
 class QuestionSummary(BaseModel):
-    # Removed the alias mechanism for strict DTO pattern
     id: str
     catchyTitle: str
     categoryName: str
     createdAt: datetime
-    model_config = ConfigDict(from_attributes=True)
 
 class QuestionDetailResponse(BaseModel):
-    # Removed the alias mechanism for strict DTO pattern
     id: str
     originalText: str
     catchyTitle: str
@@ -36,4 +46,3 @@ class QuestionDetailResponse(BaseModel):
     thePunchline: str
     runtimeComplexity: str
     createdAt: datetime
-    model_config = ConfigDict(from_attributes=True)

@@ -6,7 +6,7 @@ import DashboardPage from "../pages/DashboardPage";
 import LandingPage from "../pages/LandingPage";
 import QuestionsFoldersPage from "../pages/QuestionsFoldersPage";
 import FolderDetailsPage from "../pages/FolderDetailsPage";
-
+import QuestionDetailPage from "../pages/QuestionDetailPage";
 /**
  * Higher-Order Component to protect routes that require authentication.
  */
@@ -87,6 +87,25 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <FolderDetailsPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* Dynamic route for individual folder details. */}
+      <Route
+        path="/questions/folder/:slug"
+        element={
+          <ProtectedRoute>
+            <FolderDetailsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Dynamic route for the detailed analysis of a specific algorithmic question. */}
+      <Route
+        path="/questions/detail/:id"
+        element={
+          <ProtectedRoute>
+            <QuestionDetailPage />
           </ProtectedRoute>
         }
       />
