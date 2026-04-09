@@ -1,5 +1,10 @@
 # AlgoClassifier
 
+https://github.com/user-attachments/assets/c65598f2-d908-4ca6-bbc9-0cf5a6d0dc66
+
+
+
+
 AlgoClassifier is a full-stack web application designed for classifying, storing, and analyzing algorithmic problems. It features an AI-driven backend for categorization and a modern, responsive frontend for users to manage their problem sets.
 
 ## Architecture
@@ -23,6 +28,8 @@ AlgoClassifier is a full-stack web application designed for classifying, storing
 ### 1. Setup Backend
 ```bash
 cd algo_classifier
+
+
 # Create virtual environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -43,6 +50,4 @@ npm run dev
 ```
 The application will be accessible at: http://localhost:5173
 
----
-**Note:** Ensure you configure `.env` in both folders referencing your MongoDB URI, JWT Secret, Cloudinary API keys, and Google GenAI API key.
 
