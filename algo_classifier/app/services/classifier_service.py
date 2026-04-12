@@ -28,8 +28,7 @@ cloudinary.config(
 class ClassifierService:
     @retry(
         stop=stop_after_attempt(3), 
-        wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_not_exception_type(errors.ClientError)
+        wait=wait_exponential(multiplier=1, min=2, max=10)
     )
     async def _call_gemini(self, text: str, image_base64: str = None) -> dict:
         system_instruction = """
@@ -133,7 +132,7 @@ class ClassifierService:
         try:
             # text-embedding-004 is Google's latest embedding model
             response = await client.aio.models.embed_content(
-                model='text-embedding-004',
+                model='models/text-embedding-004',
                 contents=text
             )
             # The SDK returns an object containing the array of floats

@@ -5,7 +5,7 @@ const API_BASE_URL = "http://localhost:8000";
 const ACCESS_TOKEN_KEY = "access_token";
 
 const axiosClient = axios.create({
-  baseURL: "https://algoclassifier.onrender.com",
+  baseURL: API_BASE_URL,
   timeout: 15000,
 });
 
